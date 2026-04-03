@@ -1,0 +1,18 @@
+{
+  "name": "chromus-skills",
+  "description": "Collection of Claude Code skills by Giovanni Guarino. Includes deep-review (14-point full-stack code review with OWASP security, performance, and accessibility checks).",
+  "version": "1.0.0",
+  "author": {
+    "name": "Giovanni Guarino"
+  },
+  "homepage": "https://github.com/ChromuSx/chromus-skills",
+  "repository": "https://github.com/ChromuSx/chromus-skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "code-review",
+    "security",
+    "performance",
+    "full-stack"
+  ]
+}
