@@ -14,5 +14,6 @@
     "security",
     "performance",
     "full-stack"
-  ]
+  ],
+  "skills": "./skills/"
 }
