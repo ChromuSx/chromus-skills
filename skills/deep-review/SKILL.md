@@ -1,11 +1,15 @@
 ---
 name: deep-review
 description: >
-  Comprehensive 14-point code review for full-stack projects (.NET/C#, Angular/React, any backend+frontend stack).
-  Goes beyond syntax checking to catch functional bugs, security gaps, data leakage, DTO misalignment,
-  performance anti-patterns, and runtime failures. Incorporates OWASP multi-tenant security patterns.
-  Use this skill whenever the user asks for a "review", "code review", "check my changes", "verify the implementation",
-  "review di sicurezza", "controlla il codice", "performance review", or after completing a significant implementation task.
+  Deep functional audit — a SECOND PASS that complements standard code reviews.
+  Catches what syntax checks and standard reviews miss: cross-layer data flow gaps, incomplete domain coverage,
+  multi-tenant security violations (OWASP), N+1 queries, DTO/Form/Entity misalignment, and runtime failures.
+  Covers .NET/C#, Angular/React, and any backend+frontend stack with a 14-point checklist.
+  MUST be invoked as a complementary second check AFTER or ALONGSIDE any other code review skill or agent.
+  Trigger whenever the user asks for "review", "code review", "deep review", "check my changes",
+  "verify the implementation", "review di sicurezza", "controlla il codice", "performance review",
+  or after completing a significant implementation task.
+  This is NOT a replacement for superpowers:requesting-code-review — it runs IN ADDITION to it.
   Also trigger proactively when a large cross-cutting change has been made (new field added across layers,
   new filter/scope introduced, refactoring touching multiple services, new query patterns introduced).
   DO NOT use for simple typo fixes or single-file cosmetic changes.
