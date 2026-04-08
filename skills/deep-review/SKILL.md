@@ -61,6 +61,7 @@ Mentally simulate every actor interacting with the modified code.
 - Verify every value is handled in ALL code paths that use it
 - If there's a set/list/map, compare it against the source of truth (DB, backend enum, i18n keys)
 - Watch for partial handling: if 5 out of 6 enum values are handled, that's a bug, not a feature
+- **Import/batch processing**: for every field that maps to a UI dropdown or fixed-value enum, verify that the import service enforces the same domain — not just that parsing succeeds. Locate the authoritative value list (frontend controller, backend enum, DB lookup table) and confirm the import validation accepts exactly that set. A field accepted as a free integer or free string when the UI restricts it to specific values is a domain gap that silently persists invalid data.
 
 ### 3. View Parity
 
