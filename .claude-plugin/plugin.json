@@ -1,6 +1,6 @@
 {
   "name": "chromus-skills",
-  "description": "Collection of Claude Code skills by Giovanni Guarino. Includes deep-review (14-point full-stack code review with OWASP security, performance, and accessibility checks).",
+  "description": "Collection of Claude Code skills by Giovanni Guarino. Includes deep-review (14-point full-stack code review with OWASP security, performance, and accessibility checks) and verified-planning (3-check pre-finalization verification for implementation plans).",
   "version": "1.0.0",
   "author": {
     "name": "Giovanni Guarino"
@@ -13,7 +13,9 @@
     "code-review",
     "security",
     "performance",
-    "full-stack"
+    "full-stack",
+    "planning",
+    "verification"
   ],
   "skills": "./skills/"
 }
