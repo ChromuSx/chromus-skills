@@ -4,9 +4,9 @@ description: >
   Pre-finalization verification for implementation plans — runs 3 mandatory checks against real code
   BEFORE declaring a plan "ready to implement". Catches type mismatches, semantic leaks in filter logic,
   and technically impossible patterns that adversarial review (Codex or similar) would flag later.
-  MUST be invoked before writing "piano approvato", "pronto per implementazione", "definitivo", "final plan",
-  or any equivalent phrase. Also trigger when the user says "finalizza il piano", "chiudi il piano",
-  "dai il via libera", or before exiting plan mode with a non-trivial plan.
+  MUST be invoked before writing "final plan", "ready to implement", "approved", "approved plan", or any equivalent phrase.
+  Also trigger on Italian equivalents: "piano approvato", "pronto per implementazione", "definitivo", "finalizza il piano",
+  "chiudi il piano", "dai il via libera", or before exiting plan mode with a non-trivial plan.
   The 3 checks are non-negotiable prerequisites for plan delivery — not optional follow-ups.
   Do NOT declare a plan final until all 3 checks are explicitly completed with concrete evidence.
 ---
@@ -121,13 +121,13 @@ List the grep commands run, the results found (or not found), and for any patter
 
 | Thought | Reality |
 |---------|---------|
-| "I tipi sembrano giusti, non serve verificare" | Verifica comunque. I summary degli agenti perdono dettagli di tipo. |
-| "La semantica è intuitiva, chi la userebbe male" | Simula 3 scenari. Se uno ti sorprende, il filtro è sbagliato. |
-| "Questa API esiste, quindi posso usarla ovunque" | Verifica i pattern esistenti. Ogni contesto ha vincoli diversi. |
-| "Il piano è già abbastanza lungo, non aggiungo verifica" | Lungo ≠ verificato. La lunghezza non sostituisce il rigore. |
-| "Faccio i check dopo, intanto consegno" | No. I check sono prerequisito della consegna, non follow-up. |
-| "Un agent ha già verificato questo" | Gli agent intermedi perdono precisione di tipo. Torna ai file sorgente. |
-| "Ho letto il codice prima, mi ricordo i tipi" | Le entità cambiano. Rileggi i file nel momento della verifica. |
+| "The types look right, no need to verify" | Verify anyway. Agent summaries lose type precision. |
+| "The semantics are intuitive, no one would misuse this" | Simulate 3 scenarios. If one surprises you, the filter is wrong. |
+| "This API exists, so I can use it anywhere" | Check existing patterns. Every context has different constraints. |
+| "The plan is already long enough, I won't add verification" | Long ≠ verified. Length does not substitute rigor. |
+| "I'll do the checks later, let me deliver first" | No. The checks are a prerequisite for delivery, not a follow-up. |
+| "An agent already verified this" | Intermediate agents lose type precision. Go back to the source files. |
+| "I read the code earlier, I remember the types" | Entities change. Re-read the files at verification time. |
 
 ---
 
