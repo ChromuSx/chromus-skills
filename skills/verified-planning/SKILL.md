@@ -41,7 +41,7 @@ For every piece of pseudocode in the plan that references types (tuples, interfa
 
 Intermediate agents summarize entities as prose. Prose loses precision. A summary saying "the entity has CountryId" does not tell you whether it's `int` or `Guid`. If you used the summary instead of the file, your pseudocode has wrong types.
 
-**Real failure (2026-04-10, Ridoo project):**
+**Real failure pattern:**
 
 Plan proposed `(Guid? CompanyId, int? CountryId, int? CityId)`. Real entities used `Guid` for all three. A verification agent had provided the correct information in the same thread, but it was not propagated to the final plan document. The plan was wrong.
 
@@ -71,9 +71,9 @@ If the logical answer and the filter behavior don't match, the filter is wrong �
 
 "Upward visibility" or "hierarchical scoping" sounds correct in abstract. It breaks when you simulate: CountryManager for Italy should NOT see records with `CountryId=null` if those records are company-scoped globals used across all countries. Abstract reasoning misses this. Concrete simulation catches it.
 
-**Real failure (2026-04-10, Ridoo project):**
+**Real failure pattern:**
 
-Plan proposed "upward visibility" semantics for CountryManager: a CountryManager could see records with `CountryId=null`. Simulation showed this exposed all company-only Customer records (with `CountryId=null`) to every CountryManager in the company — a cross-country data leak. The abstract semantics sounded correct. Three concrete scenarios made the bug obvious.
+Plan proposed "upward visibility" semantics for CountryManager: a CountryManager could see records with `CountryId=null`. Simulation showed this exposed all company-only records (with `CountryId=null`) to every CountryManager in the company — a cross-scope data leak. The abstract semantics sounded correct. Three concrete scenarios made the bug obvious.
 
 **Evidence required to mark complete:**
 
@@ -107,7 +107,7 @@ For every API, library, or framework feature the plan proposes using in a specif
 
 The pattern looks correct in isolation. The API exists. The method has the right signature. But the CONTEXT forbids it. Nobody in the codebase does it because it doesn't work in that context — and you missed it because you didn't look.
 
-**Real failure (2026-04-10, Ridoo project):**
+**Real failure pattern:**
 
 Plan proposed calling `_featureManager.IsEnabled("flag")` inside an EF Core `HasQueryFilter`. Nobody in the codebase did this. Reason: EF cannot translate it to SQL, and the API is async. The correct pattern (resolved with middleware + scoped service) was findable with a 30-second grep. The plan shipped the broken approach.
 
