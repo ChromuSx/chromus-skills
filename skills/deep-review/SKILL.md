@@ -2,13 +2,18 @@
 name: deep-review
 description: >
   Deep functional audit — a SECOND PASS that complements standard code reviews.
-  Catches what syntax checks and standard reviews miss: cross-layer data flow gaps, incomplete domain coverage,
-  multi-tenant security violations (OWASP), N+1 queries, DTO/Form/Entity misalignment, and runtime failures.
-  Covers .NET/C#, Angular/React, and any backend+frontend stack with a 14-point checklist.
+  Catches what syntax checks and standard reviews miss: contract-vs-implementation mismatches,
+  cross-layer data flow gaps, incomplete domain coverage, multi-tenant security violations (OWASP),
+  concurrency/retry/idempotency bugs, amplified inherited tech debt, N+1 queries,
+  DTO/Form/Entity misalignment, and runtime failures.
+  Covers .NET/C#, Angular/React, and any backend+frontend stack.
+  Also supports a Spec/Design Review sub-mode for reviewing design documents BEFORE implementation —
+  the cheapest moment to catch contract errors and concurrency gaps.
   MUST be invoked as a complementary second check AFTER or ALONGSIDE any other code review skill or agent.
   Trigger whenever the user asks for "review", "code review", "deep review", "check my changes",
   "verify the implementation", "review di sicurezza", "controlla il codice", "performance review",
-  or after completing a significant implementation task.
+  "spec review", "design review", "review del design", "review documento", "contract review",
+  "design adherence check", or after completing a significant implementation task.
   This is NOT a replacement for superpowers:requesting-code-review — it runs IN ADDITION to it.
   Also trigger proactively when a large cross-cutting change has been made (new field added across layers,
   new filter/scope introduced, refactoring touching multiple services, new query patterns introduced).
@@ -30,6 +35,16 @@ If the user has already indicated a preference (e.g., "fai una review e correggi
 - **Report mode**: Produce a structured table with status per checkpoint. Do NOT edit files.
 - **Fix mode**: Find issues AND apply fixes. Build after fixes to confirm zero errors. Report a summary of what was fixed at the end.
 
+### Spec/Design Review sub-mode
+
+If the user asks to review a spec, design document, or feature brief BEFORE implementation (triggers: "spec review", "design review", "review del design", "review documento", "contract review"), switch the checklist focus:
+
+- **Target artifact**: the document, not the code. No `git diff`, no build output, no runtime.
+- **Mandatory checks**: CP0 Contract Adherence, CP2 Domain Completeness, CP4 Business Invariants, CP11 Security (reasoned against the described data flows), CP12 Runtime Simulation (concurrency/retry/idempotency reasoned from the design), CP15 Amplified Tech Debt, CP16 Framework Due Diligence.
+- **Skip or adapt**: CP5 Build, CP8 i18n keys, CP14 Accessibility are N/A unless mockups are included. CP10 DTO alignment becomes "schema alignment — flag fields mentioned in prose but missing from the described DTOs/entities, and vice versa."
+- **Output**: same Report-mode table, but the Details column cites the paragraph or section of the spec, not file line numbers.
+- Always include Fix-mode as "propose spec edits" — do not touch code.
+
 ## Before You Start
 
 1. **Identify the scope**: What changed? Use `git diff` or the conversation context to understand which files, entities, and layers were modified.
@@ -40,11 +55,22 @@ If the user has already indicated a preference (e.g., "fai una review e correggi
 
 ---
 
-## The 14-Point Checklist
+## The Checklist
 
 Execute ALL checks in order. Do not skip any, even if it seems like there are no issues. For each check, document what you verified and what you found.
 
-Points 1-12 are always mandatory. Point 13 (Performance) is mandatory. Point 14 (Accessibility) is optional — run it only if the user requests it or if the changes touch UI components.
+CP0 runs first and gates everything else. CP1–CP13 are always mandatory. CP14 (Accessibility) is optional. CP15–CP16 are mandatory on features that change concurrency, retry paths, message flows, or that inherit known limitations from the existing code.
+
+### 0. Contract Adherence Check
+
+Run this BEFORE any other check. For every invariant, goal, or promise declared in the spec, feature brief, PR description, or user-facing copy, enumerate the failure modes of the implementation.
+
+- List every "always", "sempre", "guaranteed", "never", "invariant", "will" statement in the source document, the commit message, and the UI copy (toasts, confirmation dialogs, help text, docs)
+- For each, ask: "What concrete scenarios could produce a committed state that violates this?" Network failure, process crash between writes, message bus unavailable, external service timeout, partial rollback, retry, concurrent actor
+- If any scenario is plausible, the invariant is NOT guaranteed. Two options: (a) strengthen the implementation to the level of the promise, or (b) weaken the promise in the contract AND in all user-facing copy
+- Do NOT accept "we log on failure" as sufficient when the contract says "always". The log is the admission that the contract is aspirational, not contractual
+- Do NOT accept "this is how the existing code does it" as justification. A pattern that satisfied an old best-effort contract may violate a new always contract — see CP16 and the Principles section.
+- Common smell: a feature goal declares "the user is always notified" but the implementation publishes the notification non-blocking with log-on-failure. Flag it.
 
 ### 1. End-to-End User Flow
 
@@ -55,6 +81,16 @@ Mentally simulate every actor interacting with the modified code.
 - Don't stop at backend logic: if backend adds a value to an internal list (e.g., `effectiveMandatoryIds`), verify that same data reaches the frontend for rendering. An internal check-list is not the same as what the frontend renders.
 - **Test inverse operations**: if a field can be added, test removal. If a value can be set, test reset to null/empty.
 - **Ask "what if this fails?"**: for every external call, async operation, or state change, consider the failure path. Is there error handling? Does the UI show a meaningful message?
+
+**Mandatory scenarios for every mutating endpoint** (simulate each explicitly, do not merge them into one "happy path" walkthrough):
+
+- First-time success path
+- Duplicate request (client retries after timeout, browser refresh on the POST confirmation page, double-click on submit)
+- Two concurrent actors mutating the same resource
+- Mid-operation failure of any external dependency (DB write OK, message bus down; external API OK, DB rollback; outbox flush fails after commit)
+- Authorized actor on a resource outside their scope
+- Unauthorized actor
+- Pre-existing inconsistent state (previous failure left orphaned rows — does the new endpoint cope?)
 
 ### 2. Domain Completeness
 
@@ -164,6 +200,14 @@ Don't just read the code structurally — simulate what happens at runtime.
 - **For reactive frameworks (Angular signals, React hooks)**: verify that computed values depend on reactive sources. Reading `formControl.value` in an Angular `computed()` is NOT reactive — it needs a signal.
 - **Error paths**: What happens when the API returns 400, 403, 404, 500? Does the UI handle it gracefully or crash silently?
 
+**Concurrency, Retry & Idempotency** (mandatory on every mutating endpoint — do not skip):
+
+- **Duplicate requests**: What happens if the client retries the same POST after a timeout, or the user refreshes the browser on a confirmation page, or double-clicks submit? Does the server create a duplicate row / duplicate message / duplicate side effect? Require an idempotency key, a natural-key dedup, or a uniqueness constraint on every mutating endpoint — document which one.
+- **Parallel actors**: Two staff/users act on the same resource simultaneously. Does last-write-wins silently overwrite the first? Require optimistic concurrency (RowVersion, ETag, version column, `[ConcurrencyCheck]`) on any update that can race. Check that a 409 is surfaced to the UI, not swallowed.
+- **Distributed consistency**: When an operation spans DB + message bus + external service, does a failure mid-way leave an inconsistent state? Prefer transactional outbox or equivalent (Wolverine, MassTransit, NServiceBus all ship one). Never fire-and-forget a message after a DB commit and assume both succeeded — that is an at-most-once guarantee on something the contract probably calls "always".
+- **Retry semantics**: If the client retries, if the message bus redelivers, if an infrastructure layer replays — is the operation safe? Non-idempotent handlers under at-least-once delivery are a bug, not a trade-off.
+- **Amplified exposure**: If the feature replaces a low-traffic internal call with a high-traffic HTTP endpoint, or adds a UI button that encourages retries, any race condition the old path tolerated will now fire routinely. Treat the new access pattern as a load generator. See CP15.
+
 ### 13. Performance
 
 Performance issues are invisible until production load hits. Catch them in review.
@@ -198,6 +242,33 @@ Run this check when the changes touch UI components, especially forms, navigatio
 - **Form labels**: Every form input has an associated `<label>` or `aria-label`. Error messages are announced to screen readers.
 - **Semantic HTML**: Use `<button>` not `<div onclick>`. Use `<nav>`, `<main>`, `<aside>` for landmarks. Headings follow logical order (h1 → h2 → h3, no skips).
 - **ARIA**: Only use ARIA when native HTML semantics are insufficient. Verify `aria-live` regions for dynamic content updates.
+
+### 15. Amplified Tech Debt Check
+
+For every known bug, limitation, or "out of scope" item the feature inherits from the existing code, ask: does the new feature amplify it?
+
+- Does the new access pattern increase the frequency of the bug (more calls, more retries, more users touching it)?
+- Does the new feature introduce concurrency where there was none (HTTP endpoint replacing internal call, multiple staff replacing a single background job, UI refresh replacing a scheduled sync)?
+- Does the new retry path make a previously-rare race condition routine?
+- Does a new actor (staff, API client, external system) reach the buggy code path on a schedule the original design never anticipated?
+- If yes to any: the debt is no longer "inherited unchanged" — it is "inherited and amplified". Pull it into scope, or explicitly document that the PR ships an amplified risk and name the person accepting it
+- Do NOT accept "pre-existing, out of scope" as a final answer without answering the amplification question in writing
+- Common smell: a design brief says "duplicate-document bug is pre-existing tech debt" while the same brief adds an HTTP endpoint that is retry-prone and multi-actor. Flag it.
+
+### 16. Framework Due Diligence
+
+Whenever the design or the code accepts a compromise ("best-effort", "eventually consistent", "log and swallow", "fire and forget", "we'll handle retries later"), check whether the framework in use already provides a built-in primitive that eliminates the compromise.
+
+- Search the framework docs / NuGet / npm for the capability BEFORE accepting the compromise. Cost of the check: two minutes. Cost of missing it: the whole compromise.
+- .NET examples:
+  - Wolverine: `PersistMessagesWithSqlServer() + UseEntityFrameworkCoreTransactions()` → transactional outbox for free
+  - MassTransit / NServiceBus: built-in outbox and saga support
+  - EF Core: `[ConcurrencyCheck]` / `RowVersion` → optimistic concurrency without a custom version column
+  - Polly: retry with jitter, circuit breaker, hedging
+  - ASP.NET Core: idempotency key middleware patterns, `ProblemDetails` for conflict responses
+- Web / frontend examples: TanStack Query retry + dedup, Angular HttpInterceptor retry, browser `Request` with `Idempotency-Key` header
+- If a primitive exists and the cost is negligible: use it. The compromise was an accidental decision, not an informed one
+- Rule of thumb: any time the design says "we'll handle this in application code", confirm the framework doesn't already handle it. Flag every compromise that survived without this check.
 
 ---
 
@@ -244,6 +315,8 @@ After all checks, run the build to confirm zero errors. Then provide a summary:
 **Functional over syntactic**: The most dangerous bugs are functionally correct code that's incomplete — a filter that checks 2 of 3 scope dimensions, a form that saves 9 of 10 fields, a validation that covers 5 of 6 enum values. These pass every linter and compiler. Only systematic enumeration catches them.
 
 **Runtime over structure**: A struct that looks correct in a diff can fail at runtime if a dependency isn't registered, a type isn't configured, or a reactive chain is broken. Always ask: "What happens when this actually runs?"
+
+**Contract adherence over pattern matching**: Replicating an existing pattern is not the same as adhering to the current contract. A log-on-failure publish may be fine for the old caller (whose contract said "best effort") and catastrophic for the new caller (whose contract says "always"). Before replicating a pattern, verify the new contract fits inside the pattern's guarantees. When it doesn't, either strengthen the implementation or weaken the contract — never ship the mismatch.
 
 **Performance is a feature**: A query that works correctly but generates N+1 database calls will bring down production. Review queries with the same rigor as business logic.
 
