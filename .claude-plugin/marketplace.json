@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Claude Code skills by Giovanni Guarino",
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "chromus-skills",
       "source": "./",
-      "description": "Collection of Claude Code skills including deep-review (14-point full-stack code review with OWASP security, performance, and accessibility checks).",
-      "version": "1.0.0",
+      "description": "Collection of Claude Code skills including deep-review (17-point full-stack code and spec review with contract adherence, concurrency/retry/idempotency, amplified tech debt, framework due diligence, OWASP security, performance, and accessibility checks).",
+      "version": "1.1.0",
       "author": {
         "name": "Giovanni Guarino"
       },
@@ -20,6 +20,10 @@
       "keywords": [
         "skills",
         "code-review",
+        "spec-review",
+        "contract-adherence",
+        "concurrency",
+        "idempotency",
         "security",
         "performance",
         "full-stack"
