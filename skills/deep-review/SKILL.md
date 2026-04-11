@@ -51,6 +51,7 @@ If the user asks to review a spec, design document, or feature brief BEFORE impl
 2. **Map the data flow**: For each change, trace the path: Entity → Repository → Service → Controller → DTO → Frontend Model → Form Component → UI Template. This map guides every checkpoint below.
 3. **Identify all actors**: Who interacts with this code? (admin, end-user, API consumer, background job). Each actor's flow must be verified.
 4. **Work on diffs, not whole files**: Focus your review on the changed code and its immediate context. Reviewing entire files leads to noise and missed issues in the actual changes.
+5. **Find the framework equivalent**: If the change introduces a custom implementation that integrates with a framework (a custom Formly type, a custom Angular Material component, a custom EF Core interceptor, a custom ASP.NET middleware, etc.), find the closest built-in equivalent and compare them property by property. The gap between "what the built-in provides" and "what the custom provides" is where the invisible bugs hide. Read the framework's source or config file for the equivalent built-in, then ask: "What does the built-in declare that we don't?" This step is mandatory before Check 12 whenever a custom framework integration is involved.
 
 ---
 
@@ -97,6 +98,7 @@ Mentally simulate every actor interacting with the modified code.
 - Verify every value is handled in ALL code paths that use it
 - If there's a set/list/map, compare it against the source of truth (DB, backend enum, i18n keys)
 - Watch for partial handling: if 5 out of 6 enum values are handled, that's a bug, not a feature
+- **Import/batch processing**: for every field that maps to a UI dropdown or fixed-value enum, verify that the import service enforces the same domain — not just that parsing succeeds. Locate the authoritative value list (frontend controller, backend enum, DB lookup table) and confirm the import validation accepts exactly that set. A field accepted as a free integer or free string when the UI restricts it to specific values is a domain gap that silently persists invalid data.
 
 ### 3. View Parity
 
@@ -194,6 +196,7 @@ Don't just read the code structurally — simulate what happens at runtime.
 - **Selection change**: When a dropdown changes, do dependent fields update correctly?
 - **Submit**: Does the form submit all expected data? Does the API receive what the form sends?
 - **For frontend frameworks**: verify that every referenced component/type is registered (not just imported). A Formly type in a config that isn't registered will silently fail. A custom component used in a template that isn't declared will crash.
+- **For custom framework integrations** (custom Formly types, custom form controls, custom directives): apply the "framework equivalent" principle from step 5 of "Before You Start". Compare the custom registration/declaration against a built-in equivalent. Common gaps: missing `wrappers` in Formly custom types (causes label/validation to disappear silently), missing `[formlyAttributes]` (loses id/aria/disabled propagation), missing `disabled` binding (field stays editable when the control is disabled), missing `ControlValueAccessor` implementation (value/touched/dirty state not propagated).
 - **For reactive frameworks (Angular signals, React hooks)**: verify that computed values depend on reactive sources. Reading `formControl.value` in an Angular `computed()` is NOT reactive — it needs a signal.
 - **Error paths**: What happens when the API returns 400, 403, 404, 500? Does the UI handle it gracefully or crash silently?
 
@@ -318,3 +321,5 @@ After all checks, run the build to confirm zero errors. Then provide a summary:
 **Performance is a feature**: A query that works correctly but generates N+1 database calls will bring down production. Review queries with the same rigor as business logic.
 
 **Defense in depth**: Security is never a single layer. Even if middleware validates scope, the service layer should also filter. Even if the frontend hides a button, the backend should still authorize. Redundant checks are not waste — they're resilience.
+
+**Framework over diff**: Standard review reads the code written. Framework integration review reads the code written AND the code that should have been written (the built-in equivalent). The most dangerous gaps are invisible in a diff — a custom Formly type without `wrappers` looks correct, but silently loses label and validation rendering. A custom form control without `[disabled]` binding looks correct, but silently ignores the control's disabled state. Always ask: "What does the framework's built-in equivalent declare that we don't?" The answer is where the silent bugs live.

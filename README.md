@@ -69,6 +69,27 @@ Goes beyond syntax checking to catch:
 
 **Trigger phrases:** "review", "code review", "deep review", "check my changes", "controlla il codice", "review di sicurezza", "spec review", "design review", "review del design", "review documento", "contract review", "design adherence check"
 
+### verified-planning
+
+A **pre-finalization verification checklist** for implementation plans — runs 3 mandatory checks against real code before declaring a plan "ready to implement".
+
+Prevents the 3 most common planning failures that adversarial review (Codex or similar) catches after the fact:
+- Type mismatches between pseudocode and real entity/interface definitions
+- Semantic leaks in filter/permission logic (caught only by concrete scenario simulation)
+- Technically impossible patterns with no codebase precedent (e.g., async API inside EF Core query filter)
+
+**The 3 checks:**
+
+| # | Check | What it catches |
+|---|-------|-----------------|
+| 1 | Type-check pseudocode vs real code | `int` vs `Guid`, `string` vs `enum` mismatches from imprecise agent summaries |
+| 2 | Simulate concrete filter/permission scenarios | Cross-scope data leaks invisible to abstract reasoning |
+| 3 | Verify new patterns have codebase precedent | Infeasible API usages in constrained contexts (EF filters, sync policies, static DI) |
+
+Each check requires concrete evidence (file paths read, scenarios listed, grep results) — not generic "I verified this" statements.
+
+**Trigger phrases:** "piano approvato", "pronto per implementazione", "definitivo", "final plan", "finalizza il piano", "dai il via libera", exit plan mode with non-trivial plan
+
 ## Contributing
 
 Feel free to open issues or PRs to suggest new checkpoints or improvements.

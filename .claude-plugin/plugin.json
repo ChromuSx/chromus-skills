@@ -1,6 +1,6 @@
 {
   "name": "chromus-skills",
-  "description": "Collection of Claude Code skills by Giovanni Guarino. Includes deep-review (17-point full-stack code and spec review with contract adherence, concurrency/retry/idempotency, amplified tech debt, framework due diligence, OWASP security, performance, and accessibility checks).",
+  "description": "Collection of Claude Code skills by Giovanni Guarino. Includes deep-review (17-point full-stack code and spec review with contract adherence, concurrency/retry/idempotency, amplified tech debt, framework due diligence, OWASP security, performance, and accessibility checks) and verified-planning (3-check pre-finalization verification for implementation plans).",
   "version": "1.1.0",
   "author": {
     "name": "Giovanni Guarino"
@@ -17,7 +17,9 @@
     "idempotency",
     "security",
     "performance",
-    "full-stack"
+    "full-stack",
+    "planning",
+    "verification"
   ],
   "skills": "./skills/"
 }
