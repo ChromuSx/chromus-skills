@@ -9,7 +9,7 @@ A collection of Claude Code skills by [Giovanni Guarino](https://github.com/Chro
 First, add the marketplace:
 
 ```bash
-claude plugin marketplace add chromus-skills https://github.com/ChromuSx/chromus-skills
+claude plugin marketplace add https://github.com/ChromuSx/chromus-skills
 ```
 
 Then install:
